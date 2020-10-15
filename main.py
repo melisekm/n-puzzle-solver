@@ -1,6 +1,7 @@
 import heapq as hq  # https://docs.python.org/2/library/heapq.html
+import timeit
 
-
+# uzol
 class Node:
     def __init__(self, stav, parent, lastOperator, heuristika, ciel):
         self.stav = stav  # int[]
@@ -13,17 +14,25 @@ class Node:
         return self.cenaCiel < other.cenaCiel
 
 
+# wrapper pre reprezentaciu minhaldy
 class MinHeap:
     def __init__(self, start):
         self.heap = [start]
 
+    # vlozi prvok do haldy
     def insert(self, uzol):
         hq.heappush(self.heap, uzol)
 
+    # odoberie a vrati prvok z haldy
     def pop(self):
         return hq.heappop(self.heap)
 
+    # vrati stav ci je halda prazdna
+    def isEmpty(self):
+        return not self.heap
 
+
+# predvypocita pozicie pre cisla v ciely
 def ziskajPozicieCisel(ciel):
     global pozicieCisel
     pozicieCisel = {}
@@ -32,6 +41,7 @@ def ziskajPozicieCisel(ciel):
             pozicieCisel[cislo] = najdiPosCisla(ciel, cislo)
 
 
+# vrati x y poziciu pre vstupne cislo v hlavolame
 def najdiPosCisla(stav, target):
     for i, sublist in enumerate(stav):
         for j, cislo in enumerate(sublist):
@@ -39,6 +49,7 @@ def najdiPosCisla(stav, target):
                 return (i, j)
 
 
+# ak je to mozne vrati novy stav po vykonani operatora
 def vykonajOperator(stav, operator):
     i, j = najdiPosCisla(stav, 0)  # pozicia medzery
     novyStav = [sublist[:] for sublist in stav]  # skopiruje data
@@ -63,36 +74,20 @@ def vykonajOperator(stav, operator):
     return novyStav
 
 
-def VPRAVO(stav):
-    return vykonajOperator(stav, "VPRAVO")
-
-
-def DOLE(stav):
-    return vykonajOperator(stav, "DOLE")
-
-
-def VLAVO(stav):
-    return vykonajOperator(stav, "VLAVO")
-
-
-def HORE(stav):
-    return vykonajOperator(stav, "HORE")
-
-
 def loadFile(nazov):
-    stav = []
+    stav = []  # je reprezentovany ako list of lists
     with open(nazov, "r") as file:
         for index, line in enumerate(file):
             stav.append([])
-            znaky = line.strip().split(" ")
-            stav[index] = list(map(int, znaky))
+            znaky = line.strip().split(" ")  # extrahuje cisla z riadku
+            stav[index] = list(map(int, znaky))  # zmeni ich na inty
     return stav
 
 
 def loadInput():
     print("Pocet policok, ktore nie su na svojom mieste[1]")
-    print("Súčet vzdialeností jednotlivých políčok od ich cieľovej pozície")
-    # heuristika = int(input("Zadajte typ heuristiky: "))
+    print("Súčet vzdialeností jednotlivých políčok od ich cieľovej pozície[2]")
+    # heuristika = int(input("Zadajte typ heuristiky: ")) # vyber funkcie pre heuristiku
     heuristika = 2
     if heuristika == 1:
         heuristika = heuristika1
@@ -106,41 +101,86 @@ def loadInput():
     return (start, ciel), heuristika
 
 
+# Pocet policok, ktore nie su na svojom mieste
 def heuristika1(stav, ciel):
     vysledok = 0
     for i, sublist in enumerate(stav):
         for j, cislo in enumerate(sublist):
-            if cislo != 0 and cislo != ciel[i][j]:
+            if cislo != 0 and cislo != ciel[i][j]:  # kontrolujem ci tam je alebo nie
                 vysledok += 1
 
     return vysledok
 
 
-# je mozne si predvypocitat pozicie pre kazde cislo
+# Súčet vzdialeností jednotlivých políčok od ich cieľovej pozície
 def heuristika2(stav, ciel):
     vysledok = 0
     for i, sublist in enumerate(stav):
         for j, cislo in enumerate(sublist):
             if cislo != 0:
-                # x, y = najdiPosCisla(ciel, cislo)
-                x, y = pozicieCisel[cislo]
+                # x, y = najdiPosCisla(ciel, cislo) # pocitam
+                x, y = pozicieCisel[cislo]  # predvypocitana pozicia cisla v ciely
                 vysledok += abs((x - i)) + abs((y - j))
 
     return vysledok
+
+
+def opacnySmer(newOperatorIndex, parentOperator, operatory):
+    if parentOperator is not None:
+        parentOperatorIndex = operatory.index(parentOperator)
+        if (newOperatorIndex + parentOperatorIndex) % 2 == 0:
+            return True
+    return False
+
+
+def vytriedNasledovnikov(nasledovnici, spracovaneStavy, minHeap):
+    for nasledovnik in nasledovnici:
+        hashableStav = tuple(tuple(riadok) for riadok in nasledovnik.stav)
+        if hashableStav in spracovaneStavy:
+            nasledovnici.remove(nasledovnik)
+    for nasledovnik in nasledovnici:
+        minHeap.insert(nasledovnik)
+
+
+def vytvorNasledovnikov(parent, heuristika, ciel, operatory):
+    nasledovnici = []
+    for i, operator in enumerate(operatory):
+        if not opacnySmer(i, parent.lastOperator, operatory):
+            novyStav = vykonajOperator(parent.stav, operator)
+            if novyStav is not None:
+                novyUzol = Node(novyStav, parent, operator, heuristika, ciel)
+                nasledovnici.append(novyUzol)
+    return nasledovnici
+
+
+def zostavRiesenie(uzol):
+    print("helo?")
 
 
 def lacne_hladanie(problem, heuristika):
     start, ciel = problem
     if "heuristika2" == heuristika.__name__:
         ziskajPozicieCisel(ciel)
+    operatory = ["VPRAVO", "DOLE", "VLAVO", "HORE"]
     start = Node(start, None, None, heuristika, ciel)
-    ciel = Node(ciel, None, None, heuristika, ciel)
     spracovaneStavy = {}
-    minHeap = MinHeap(start)
+    minHeap = MinHeap(start)  # vlozi start uzol do haldy
+    while not minHeap.isEmpty():
+        current = minHeap.pop()
+        if current.stav == ciel:
+            return zostavRiesenie(current)
+        nasledovnici = vytvorNasledovnikov(current, heuristika, ciel, operatory)
+        hashableStav = tuple(tuple(riadok) for riadok in current.stav)
+        spracovaneStavy[hashableStav] = current
+        vytriedNasledovnikov(nasledovnici, spracovaneStavy, minHeap)
+    return None
 
 
 if __name__ == "__main__":
     problem, heuristika = loadInput()
+    start = timeit.default_timer()
     riesenie = lacne_hladanie(problem, heuristika)
+    print(timeit.default_timer() - start)
     # vystup = heuristika2(problem[0], problem[1])
+
     pass
