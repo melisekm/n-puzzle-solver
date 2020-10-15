@@ -154,7 +154,12 @@ def vytvorNasledovnikov(parent, heuristika, ciel, operatory):
 
 
 def zostavRiesenie(uzol):
-    print("helo?")
+    result = []
+    while uzol is not None:
+        result.append(uzol.lastOperator)
+        uzol = uzol.parent
+    result.reverse()
+    return result[1:]
 
 
 def lacne_hladanie(problem, heuristika):
@@ -182,5 +187,4 @@ if __name__ == "__main__":
     riesenie = lacne_hladanie(problem, heuristika)
     print(timeit.default_timer() - start)
     # vystup = heuristika2(problem[0], problem[1])
-
-    pass
+    print(len(riesenie))
