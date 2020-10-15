@@ -12,12 +12,10 @@ class Node:
     def __lt__(self, other):  # custom comparator
         return self.cenaCiel < other.cenaCiel
 
-    pass
-
 
 class MinHeap:
-    def __init__(self):
-        self.heap = []
+    def __init__(self, start):
+        self.heap = [start]
 
     def insert(self, uzol):
         hq.heappush(self.heap, uzol)
@@ -26,43 +24,78 @@ class MinHeap:
         return hq.heappop(self.heap)
 
 
+def najdiMedzeru(stav):
+    for i, sublist in enumerate(stav):
+        for j, cislo in enumerate(sublist):
+            if cislo == 0:
+                return (i, j)
+
+
+def vykonajOperator(stav, operator):
+    i, j = najdiMedzeru(stav)
+    novyStav = [sublist[:] for sublist in stav]  # skopiruje data
+
+    if operator == "VPRAVO":
+        if j == len(stav[i]) - 1:
+            return None
+        novyStav[i][j], novyStav[i][j + 1] = novyStav[i][j + 1], novyStav[i][j]
+    elif operator == "DOLE":
+        if i == len(stav) - 1:
+            return None
+        novyStav[i][j], novyStav[i + 1][j] = novyStav[i + 1][j], novyStav[i][j]
+    elif operator == "VLAVO":
+        if j == 0:
+            return None
+        novyStav[i][j], novyStav[i][j - 1] = novyStav[i][j - 1], novyStav[i][j]
+    elif operator == "HORE":
+        if i == 0:
+            return None
+        novyStav[i][j], novyStav[i - 1][j] = novyStav[i - 1][j], novyStav[i][j]
+
+    return novyStav
+
+
 def VPRAVO(stav):
-    pass
+    return vykonajOperator(stav, "VPRAVO")
 
 
 def DOLE(stav):
-    pass
+    return vykonajOperator(stav, "DOLE")
 
 
 def VLAVO(stav):
-    pass
+    return vykonajOperator(stav, "VLAVO")
 
 
 def HORE(stav):
-    pass
+    return vykonajOperator(stav, "HORE")
 
 
 def loadFile(nazov):
     stav = []
     with open(nazov, "r") as file:
-        for line in file:
-            znak = line.strip().split(" ")
-            for i in znak:
-                stav.append(i)
-    return Node(stav, None, None, heuristika)
+        for index, line in enumerate(file):
+            stav.append([])
+            znaky = line.strip().split(" ")
+            stav[index].append(znaky)
+    return stav
 
 
 def loadInput():
     print("Pocet policok, ktore nie su na svojom mieste[1]")
     print("Súčet vzdialeností jednotlivých políčok od ich cieľovej pozície")
-    heuristika = int(input("Zadajte typ heuristiky: "))
+    # heuristika = int(input("Zadajte typ heuristiky: "))
+    heuristika = 1
     if heuristika == 1:
-        return heuristika1
+        heuristika = heuristika1
     elif heuristika == 2:
-        return heuristika2
+        heurestika = heuristika2
     else:
         print("Zly vstup :)")
         quit()
+    start = loadFile("start.txt")
+    ciel = loadFile("ciel.txt")
+    return (start, ciel), heuristika
 
 
 def heuristika1(stav):
@@ -77,16 +110,15 @@ def heuristika2(stav):
 
 def lacne_hladanie(problem, heuristika):
     start, ciel = problem
-    minHeap = MinHeap()
-    minHeap.insert(start)
+    start = Node(start, None, None, heuristika)
+    ciel = Node(ciel, None, None, heuristika)
+    spracovaneStavy = {}
+    minHeap = MinHeap(start)
 
 
 if __name__ == "__main__":
-    spracovane = {}
-    # heuristika = loadInput()
-    heuristika = heuristika1
-    start = loadFile("start.txt")
-    ciel = loadFile("ciel.txt")
-    lacne_hladane(problem, heuristika)
-
+    problem, heuristika = loadInput()
+    # riesenie = lacne_hladanie(problem, heuristika)
+    vstup = [[6, 1, 2, 3], [4, 5, 7, 0], [8, 9, 10, 11]]
+    vystup = DOLE(vstup)
     pass
