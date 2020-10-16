@@ -35,13 +35,30 @@ class MinHeap:
         return not self.heap
 
 
-# predvypocita pozicie pre cisla v ciely
-def ziskajPozicieCisel(ciel):
-    global pozicieCisel
-    pozicieCisel = {}
-    for sublist in ciel:
-        for cislo in sublist:
-            pozicieCisel[cislo] = najdiPosCisla(ciel, cislo)
+def loadFile(nazov):
+    stav = []  # je reprezentovany ako list of lists
+    with open(nazov, "r") as file:
+        for index, line in enumerate(file):
+            stav.append([])
+            znaky = line.strip().split(" ")  # extrahuje cisla z riadku
+            stav[index] = list(map(int, znaky))  # zmeni ich na inty
+    return stav
+
+
+def loadInput():
+    print("Pocet policok, ktore nie su na svojom mieste[1]")
+    print("Súčet vzdialeností jednotlivých políčok od ich cieľovej pozície[2]")
+    heuristika = int(input("Zadajte typ heuristiky: "))  # vyber funkcie pre heuristiku
+    if heuristika == 1:
+        heuristika = heuristika1
+    elif heuristika == 2:
+        heuristika = heuristika2
+    else:
+        print("Zly vstup :)")
+        quit()
+    start = loadFile("start.txt")
+    ciel = loadFile("ciel.txt")
+    return (start, ciel), heuristika
 
 
 # vrati x y poziciu pre vstupne cislo v hlavolame
@@ -77,33 +94,6 @@ def vykonajOperator(stav, operator):
     return novyStav
 
 
-def loadFile(nazov):
-    stav = []  # je reprezentovany ako list of lists
-    with open(nazov, "r") as file:
-        for index, line in enumerate(file):
-            stav.append([])
-            znaky = line.strip().split(" ")  # extrahuje cisla z riadku
-            stav[index] = list(map(int, znaky))  # zmeni ich na inty
-    return stav
-
-
-def loadInput():
-    print("Pocet policok, ktore nie su na svojom mieste[1]")
-    print("Súčet vzdialeností jednotlivých políčok od ich cieľovej pozície[2]")
-    heuristika = int(input("Zadajte typ heuristiky: "))  # vyber funkcie pre heuristiku
-    # heuristika = 2
-    if heuristika == 1:
-        heuristika = heuristika1
-    elif heuristika == 2:
-        heuristika = heuristika2
-    else:
-        print("Zly vstup :)")
-        quit()
-    start = loadFile("start.txt")
-    ciel = loadFile("ciel.txt")
-    return (start, ciel), heuristika
-
-
 # Pocet policok, ktore nie su na svojom mieste
 def heuristika1(stav, ciel):
     vysledok = 0
@@ -113,6 +103,15 @@ def heuristika1(stav, ciel):
                 vysledok += 1
 
     return vysledok
+
+
+# predvypocita pozicie pre cisla v ciely
+def ziskajPozicieCisel(ciel):
+    global pozicieCisel
+    pozicieCisel = {}
+    for sublist in ciel:
+        for cislo in sublist:
+            pozicieCisel[cislo] = najdiPosCisla(ciel, cislo)
 
 
 # Súčet vzdialeností jednotlivých políčok od ich cieľovej pozície
@@ -165,7 +164,7 @@ def zostavRiesenie(uzol):
         result.append(uzol.lastOperator)
         uzol = uzol.parent
     result.reverse()
-    return result[1:]
+    return result[1:]  # bez None od start pozicie
 
 
 def lacne_hladanie(problem, heuristika):
@@ -176,20 +175,67 @@ def lacne_hladanie(problem, heuristika):
     start = Node(start, None, None, heuristika, ciel)
     spracovaneStavy = {}  # hashTable uz preskumanych stavov
     minHeap = MinHeap(start)  # vlozi start uzol do haldy
-    while not minHeap.isEmpty():  # pokym nie je prazdna
+    while not minHeap.isEmpty():  # pokym existuju vytvorene ale nespracovane uzly
         current = minHeap.pop()  # vyberiem z topu haldy
-        if current.stav == ciel:
+        if current.stav == ciel:  # nasiel som koniec
+            print(f"Pocet spracovanych uzlov: {len(spracovaneStavy)}")
+            print(f"Pocet vygenerovanych uzlov: {len(spracovaneStavy) + len(minHeap.heap)}")
             return zostavRiesenie(current)
-        nasledovnici = vytvorNasledovnikov(current, heuristika, ciel, operatory)
-        hashableStav = tuple(tuple(riadok) for riadok in current.stav)  # TODO
+        nasledovnici = vytvorNasledovnikov(current, heuristika, ciel, operatory)  # potencialny
+        hashableStav = tuple(tuple(riadok) for riadok in current.stav)  # konvert na hashable TODO
         spracovaneStavy[hashableStav] = current
         vytriedNasledovnikov(nasledovnici, spracovaneStavy, minHeap)
+        # odstranenie uz spracovanych stavov
     return None
+
+
+def pocetVacsichPredchodcov(start, cislo):
+    res = 0
+    for sublist in start:
+        for num in sublist:
+            if num != 0:
+                if num == cislo:
+                    return res
+                if num > cislo:
+                    res += 1
+    return res
+
+
+def paritaPreStav(stav):
+    res = 0
+    for i, sublist in enumerate(stav, start=1):
+        for cislo in sublist:
+            if cislo != 0:
+                res += pocetVacsichPredchodcov(stav, cislo)
+            else:
+                res += i
+    return res % 2
+
+
+def isSolvable(problem):
+    start, ciel = problem
+    parita1 = paritaPreStav(start)
+    if len(start) % 2 == 1 and len(start[0]) % 2 == 1:
+        if parita1 == 1:  # 7x7 toto nie je zjavne na vsetko :)
+            return False
+        else:
+            return True
+    parita2 = paritaPreStav(ciel)
+    if parita1 == parita2:
+        return True
+    return False
 
 
 if __name__ == "__main__":
     problem, heuristika = loadInput()
-    start = timeit.default_timer()
-    riesenie = lacne_hladanie(problem, heuristika)
-    print(timeit.default_timer() - start)
-    print(len(riesenie))
+    if isSolvable(problem):
+        start = timeit.default_timer()
+        riesenie = lacne_hladanie(problem, heuristika)
+        end = timeit.default_timer() - start
+        for i in riesenie:
+            print(i)
+        print(f"Hladanie trvalo: {end}")
+        print(f"Dlzka riesenia: {len(riesenie)}")
+
+    else:
+        print("Riesenie neexistuje.")
