@@ -6,12 +6,15 @@ class Node:
     def __init__(self, stav, parent, lastOperator, heuristika, ciel):
         self.stav = stav  # int[]
         self.parent = parent  # class Node
-        # string, ked sa pozrem na rodica mam vediet vypocitat cestu mozem usetrit
+        # string, ked sa pozrem na rodica mam vediet vypocitat cestu mozem usetrit ale aj stratit
         self.lastOperator = lastOperator
         self.cenaCiel = heuristika(stav, ciel)  # podla heurestickej funkcie
 
     def __lt__(self, other):  # custom comparator pre minHeap
         return self.cenaCiel < other.cenaCiel
+
+    def __le__(self, other):
+        return self.cenaCiel <= other.cenaCiel
 
 
 # wrapper pre reprezentaciu minhaldy
@@ -87,8 +90,8 @@ def loadFile(nazov):
 def loadInput():
     print("Pocet policok, ktore nie su na svojom mieste[1]")
     print("Súčet vzdialeností jednotlivých políčok od ich cieľovej pozície[2]")
-    # heuristika = int(input("Zadajte typ heuristiky: ")) # vyber funkcie pre heuristiku
-    heuristika = 2
+    heuristika = int(input("Zadajte typ heuristiky: "))  # vyber funkcie pre heuristiku
+    # heuristika = 2
     if heuristika == 1:
         heuristika = heuristika1
     elif heuristika == 2:
@@ -118,16 +121,19 @@ def heuristika2(stav, ciel):
     for i, sublist in enumerate(stav):
         for j, cislo in enumerate(sublist):
             if cislo != 0:
-                # x, y = najdiPosCisla(ciel, cislo) # pocitam
+                # x, y = najdiPosCisla(ciel, cislo)  # pocitam
                 x, y = pozicieCisel[cislo]  # predvypocitana pozicia cisla v ciely
                 vysledok += abs((x - i)) + abs((y - j))
 
     return vysledok
 
 
+# ad hoc :D
 def opacnySmer(newOperatorIndex, parentOperator, operatory):
     if parentOperator is not None:
         parentOperatorIndex = operatory.index(parentOperator)
+        if newOperatorIndex == parentOperatorIndex:
+            return False
         if (newOperatorIndex + parentOperatorIndex) % 2 == 0:
             return True
     return False
@@ -164,18 +170,18 @@ def zostavRiesenie(uzol):
 
 def lacne_hladanie(problem, heuristika):
     start, ciel = problem
-    if "heuristika2" == heuristika.__name__:
-        ziskajPozicieCisel(ciel)
+    if heuristika.__name__ == "heuristika2":
+        ziskajPozicieCisel(ciel)  # ak je to heurestika 2 dokazem si dopredu vypocitat pozicie
     operatory = ["VPRAVO", "DOLE", "VLAVO", "HORE"]
     start = Node(start, None, None, heuristika, ciel)
-    spracovaneStavy = {}
+    spracovaneStavy = {}  # hashTable uz preskumanych stavov
     minHeap = MinHeap(start)  # vlozi start uzol do haldy
-    while not minHeap.isEmpty():
-        current = minHeap.pop()
+    while not minHeap.isEmpty():  # pokym nie je prazdna
+        current = minHeap.pop()  # vyberiem z topu haldy
         if current.stav == ciel:
             return zostavRiesenie(current)
         nasledovnici = vytvorNasledovnikov(current, heuristika, ciel, operatory)
-        hashableStav = tuple(tuple(riadok) for riadok in current.stav)
+        hashableStav = tuple(tuple(riadok) for riadok in current.stav)  # TODO
         spracovaneStavy[hashableStav] = current
         vytriedNasledovnikov(nasledovnici, spracovaneStavy, minHeap)
     return None
@@ -186,5 +192,4 @@ if __name__ == "__main__":
     start = timeit.default_timer()
     riesenie = lacne_hladanie(problem, heuristika)
     print(timeit.default_timer() - start)
-    # vystup = heuristika2(problem[0], problem[1])
     print(len(riesenie))

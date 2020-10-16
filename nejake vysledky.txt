@@ -1,0 +1,23 @@
+7x7
+60sec
+2347krokov
+4GB pamate
+heuristika 2
+
+6x6
+2sec
+1098krokov
+2
+
+17sec
+10618krokov
+1
+
+5x5
+0.51sec
+642krokov
+2
+
+3sec
+2558krokov
+1
