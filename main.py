@@ -1,6 +1,8 @@
 import heapq as hq  # https://docs.python.org/2/library/heapq.html
 import timeit
 
+import drawImages as draw
+
 # uzol
 class Node:
     def __init__(self, stav, parent, lastOperator, heuristika, ciel):
@@ -160,11 +162,14 @@ def vytvorNasledovnikov(parent, heuristika, ciel, operatory):
 
 def zostavRiesenie(uzol):
     result = []
+    uzly = []
     while uzol is not None:
         result.append(uzol.lastOperator)
+        uzly.append(uzol)
         uzol = uzol.parent
     result.reverse()
-    return result[1:]  # bez None od start pozicie
+    uzly.reverse()
+    return result[1:], uzly  # bez None od start pozicie
 
 
 def lacne_hladanie(problem, heuristika):
@@ -208,20 +213,20 @@ def paritaPreStav(stav):
             if cislo != 0:
                 res += pocetVacsichPredchodcov(stav, cislo)
             else:
-                res += i
-    return res % 2
+                medzeraPos = i
+    return res, medzeraPos
 
 
 def isSolvable(problem):
     start, ciel = problem
-    parita1 = paritaPreStav(start)
+    parita1, medzera1 = paritaPreStav(start)
     if len(start) % 2 == 1 and len(start[0]) % 2 == 1:
-        if parita1 == 1:  # 7x7 toto nie je zjavne na vsetko :)
+        if parita1 % 2 == 1:  # 7x7 toto nie je zjavne na vsetko :)
             return False
         else:
             return True
-    parita2 = paritaPreStav(ciel)
-    if parita1 == parita2:
+    parita2, medzera2 = paritaPreStav(ciel)
+    if (parita1 + medzera1) % 2 == (parita2 + medzera2) % 2:
         return True
     return False
 
@@ -230,12 +235,13 @@ if __name__ == "__main__":
     problem, heuristika = loadInput()
     if isSolvable(problem):
         start = timeit.default_timer()
-        riesenie = lacne_hladanie(problem, heuristika)
+        riesenie, uzly = lacne_hladanie(problem, heuristika)
         end = timeit.default_timer() - start
         for i in riesenie:
             print(i)
         print(f"Hladanie trvalo: {end}")
         print(f"Dlzka riesenia: {len(riesenie)}")
+        draw.drawImages(uzly)
 
     else:
         print("Riesenie neexistuje.")
