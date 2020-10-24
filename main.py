@@ -53,11 +53,11 @@ def getKonfiguracia(stav):
 
 def loadInput():
     print("Koniec [q]")
-    print("Predvygenerovane: [3x2] [3x3] [5x2] [4x3] [2x7] [5x5] [9x3] [6x6] [7x7]")
+    print("Predvygenerovane: [2x7] [3x2] [3x3] [4x3] [5x2] [5x5] [6x6] [7x7] [9x3] [neriesitelne]")
     print("alebo [vlastny] zo suboru tests - start.txt a ciel.txt: ")
     vstup = input()
 
-    if vstup in ("3x2", "3x3", "5x2", "4x3", "2x7", "6x6", "7x7", "9x3"):
+    if vstup in ("2x7", "3x2", "3x3", "4x3", "5x2", "5x5", "6x6", "7x7", "9x3", "neriesitelne"):
         path = "tests\\" + vstup + "\\"
     elif vstup == "vlastny":
         path = "tests\\"
@@ -81,7 +81,7 @@ def loadInput():
         heuristika = heuristika2
     else:
         return None, None
-    print(f"Spustam hladanie ({len(start)}x{len(start[0])})...")
+    print(f"Spustam hladanie ({len(start[0])}x{len(start)})...")
     return (start, ciel), heuristika
 
 
@@ -91,31 +91,6 @@ def najdiPosCisla(stav, target):
         for j, cislo in enumerate(sublist):
             if cislo == target:
                 return (i, j)
-
-
-# ak je to mozne vrati novy stav po vykonani operatora
-def vykonajOperator(stav, operator):
-    i, j = najdiPosCisla(stav, 0)  # pozicia medzery
-    novyStav = [sublist[:] for sublist in stav]  # skopiruje data
-
-    if operator == "VPRAVO":
-        if j == len(stav[i]) - 1:
-            return None
-        novyStav[i][j], novyStav[i][j + 1] = novyStav[i][j + 1], novyStav[i][j]
-    elif operator == "DOLE":
-        if i == len(stav) - 1:
-            return None
-        novyStav[i][j], novyStav[i + 1][j] = novyStav[i + 1][j], novyStav[i][j]
-    elif operator == "VLAVO":
-        if j == 0:
-            return None
-        novyStav[i][j], novyStav[i][j - 1] = novyStav[i][j - 1], novyStav[i][j]
-    elif operator == "HORE":
-        if i == 0:
-            return None
-        novyStav[i][j], novyStav[i - 1][j] = novyStav[i - 1][j], novyStav[i][j]
-
-    return novyStav
 
 
 # Pocet policok, ktore nie su na svojom mieste
@@ -150,6 +125,38 @@ def heuristika2(stav, ciel):
     return vysledok
 
 
+def isValid(stav, operator, i, j):
+    if operator == "VPRAVO":
+        if j == len(stav[i]) - 1:
+            return False
+    elif operator == "DOLE":
+        if i == len(stav) - 1:
+            return False
+    elif operator == "VLAVO":
+        if j == 0:
+            return False
+    elif operator == "HORE":
+        if i == 0:
+            return False
+    return True
+
+
+# ak je to mozne vrati novy stav po vykonani operatora
+def vykonajOperator(stav, operator, i, j):
+    novyStav = [sublist[:] for sublist in stav]  # skopiruje data
+
+    if operator == "VPRAVO":
+        novyStav[i][j], novyStav[i][j + 1] = novyStav[i][j + 1], novyStav[i][j]
+    elif operator == "DOLE":
+        novyStav[i][j], novyStav[i + 1][j] = novyStav[i + 1][j], novyStav[i][j]
+    elif operator == "VLAVO":
+        novyStav[i][j], novyStav[i][j - 1] = novyStav[i][j - 1], novyStav[i][j]
+    elif operator == "HORE":
+        novyStav[i][j], novyStav[i - 1][j] = novyStav[i - 1][j], novyStav[i][j]
+
+    return novyStav
+
+
 def opacnySmer(newOperator, parentOperator):
     if newOperator == "VPRAVO" and parentOperator == "VLAVO":
         return True
@@ -162,24 +169,25 @@ def opacnySmer(newOperator, parentOperator):
     return False
 
 
-def vytriedNasledovnikov(nasledovnici, spracovaneStavy, minHeap):
-    for nasledovnik in nasledovnici:
-        hashableStav = tuple(tuple(riadok) for riadok in nasledovnik.stav)
-        if hashableStav in spracovaneStavy:
-            nasledovnici.remove(nasledovnik)
-    for nasledovnik in nasledovnici:
-        minHeap.insert(nasledovnik)
-
-
 def vytvorNasledovnikov(parent, heuristika, ciel, operatory):
     nasledovnici = []
-    for operator in operatory:
-        if not opacnySmer(operator, parent.lastOperator):
-            novyStav = vykonajOperator(parent.stav, operator)
-            if novyStav is not None:
+    i, j = najdiPosCisla(parent.stav, 0)  # pozicia medzery
+    for operator in operatory:  # skusam vsetkych operatorov
+        if not opacnySmer(operator, parent.lastOperator):  # do opcaneho smeru nejdem
+            if isValid(parent.stav, operator, i, j):  # ak sa da aplikovat operator
+                novyStav = vykonajOperator(parent.stav, operator, i, j)
                 novyUzol = Node(novyStav, parent, operator, heuristika, ciel)
                 nasledovnici.append(novyUzol)
     return nasledovnici
+
+
+def vytriedNasledovnikov(nasledovnici, spracovaneStavy, minHeap):
+    for nasledovnik in nasledovnici:  # hlada nasledovnikov v spracovanych stavoch
+        hashableStav = tuple(tuple(riadok) for riadok in nasledovnik.stav)
+        if hashableStav in spracovaneStavy:
+            nasledovnici.remove(nasledovnik)
+    for nasledovnik in nasledovnici:  # ti co niesu uz spracovany su priadny do haldy
+        minHeap.insert(nasledovnik)
 
 
 def zostavRiesenie(uzol):
@@ -200,17 +208,16 @@ def lacne_hladanie(problem, heuristika):
     start = Node(start, None, None, heuristika, ciel)
     spracovaneStavy = set()  # hashSet uz preskumanych stavov
     minHeap = MinHeap(start)  # vlozi start uzol do haldy
-
     while not minHeap.isEmpty():  # pokym existuju vytvorene ale nespracovane uzly
         current = minHeap.pop()  # vyberiem z topu haldy
-        hashableStav = tuple(tuple(riadok) for riadok in current.stav)  # konvert na hashable
 
         if current.stav == ciel:  # nasiel som koniec
             riesenie = zostavRiesenie(current)
             break
 
         nasledovnici = vytvorNasledovnikov(current, heuristika, ciel, operatory)  # potencialny
-        spracovaneStavy.add(hashableStav)
+        hashableStav = tuple(tuple(riadok) for riadok in current.stav)  # konvert na hashable
+        spracovaneStavy.add(hashableStav)  #
         vytriedNasledovnikov(nasledovnici, spracovaneStavy, minHeap)
         # odstranenie uz spracovanych stavov
 
