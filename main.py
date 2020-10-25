@@ -4,7 +4,7 @@ import timeit
 # uzol
 class Node:
     def __init__(self, stav, parent, lastOperator, heuristika, ciel):
-        self.stav = stav  # int[]
+        self.stav = stav  # 2D pole
         self.parent = parent  # class Node
         # string, ked sa pozrem na rodica mam vediet vypocitat cestu mozem usetrit ale aj stratit
         self.lastOperator = lastOperator
@@ -73,7 +73,7 @@ def loadInput():
     print("Ciel:" + getKonfiguracia(ciel))
     print("Zadajte typ heuristiky: ")
     print("Pocet policok, ktore nie su na svojom mieste[1]")
-    print("Súčet vzdialeností jednotlivých políčok od ich cieľovej pozície[2]")
+    print("Sucet vzdialenosti jednotlivych policok od ich cielovej pozicie[2]")
     heuristika = input()  # vyber funkcie pre heuristiku
     if heuristika == "1":
         heuristika = heuristika1
@@ -211,6 +211,9 @@ def lacne_hladanie(problem, heuristika):
     while not minHeap.isEmpty():  # pokym existuju vytvorene ale nespracovane uzly
         current = minHeap.pop()  # vyberiem z topu haldy
 
+        # if hashableStav in spracovaneStavy:
+        #    continue
+
         if current.stav == ciel:  # nasiel som koniec
             riesenie = zostavRiesenie(current)
             break
@@ -236,8 +239,8 @@ if __name__ == "__main__":
         start = timeit.default_timer()
 
         riesenie = lacne_hladanie(problem, heuristika)
-
         end = timeit.default_timer() - start
+
         print(f"Hladanie trvalo: {end}")
         if riesenie is not None:
             print(f"Dlzka riesenia: {len(riesenie)}")
