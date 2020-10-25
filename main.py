@@ -211,9 +211,6 @@ def lacne_hladanie(problem, heuristika):
     while not minHeap.isEmpty():  # pokym existuju vytvorene ale nespracovane uzly
         current = minHeap.pop()  # vyberiem z topu haldy
 
-        # if hashableStav in spracovaneStavy:
-        #    continue
-
         if current.stav == ciel:  # nasiel som koniec
             riesenie = zostavRiesenie(current)
             break
