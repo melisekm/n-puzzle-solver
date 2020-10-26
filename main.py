@@ -104,7 +104,7 @@ def heuristika1(stav, ciel):
     return vysledok
 
 
-# predvypocita pozicie pre cisla v ciely
+# predvypocita pozicie pre cisla v cieli
 def ziskajPozicieCisel(ciel):
     global pozicieCisel
     pozicieCisel = {}
@@ -113,7 +113,7 @@ def ziskajPozicieCisel(ciel):
             pozicieCisel[cislo] = najdiPosCisla(ciel, cislo)
 
 
-# Súčet vzdialeností jednotlivých políčok od ich cieľovej pozície
+# Sucet vzdialenosti jednotlivych policok od ich cielovej pozície
 def heuristika2(stav, ciel):
     vysledok = 0
     for i, sublist in enumerate(stav):
@@ -125,6 +125,7 @@ def heuristika2(stav, ciel):
     return vysledok
 
 
+# skontroluje ci sa da pouzit operator
 def isValid(stav, operator, i, j):
     if operator == "VPRAVO":
         if j == len(stav[i]) - 1:
@@ -157,6 +158,7 @@ def vykonajOperator(stav, operator, i, j):
     return novyStav
 
 
+# sknotroluje ci sa nejedna o stav z ktoreho sme sa vratili
 def opacnySmer(newOperator, parentOperator):
     if newOperator == "VPRAVO" and parentOperator == "VLAVO":
         return True
@@ -169,6 +171,7 @@ def opacnySmer(newOperator, parentOperator):
     return False
 
 
+# spracuje stav a vrati zoznam nasledovnikov novych
 def vytvorNasledovnikov(parent, heuristika, ciel, operatory):
     nasledovnici = []
     i, j = najdiPosCisla(parent.stav, 0)  # pozicia medzery
@@ -181,8 +184,9 @@ def vytvorNasledovnikov(parent, heuristika, ciel, operatory):
     return nasledovnici
 
 
+# odstrani uz spracovanych nasledovnikov
 def vytriedNasledovnikov(nasledovnici, spracovaneStavy, minHeap):
-    for nasledovnik in nasledovnici:  # hlada nasledovnikov v spracovanych stavoch
+    for nasledovnik in nasledovnici:  # hlada nasledovnikov v sete spracovanych stavoch
         hashableStav = tuple(tuple(riadok) for riadok in nasledovnik.stav)
         if hashableStav in spracovaneStavy:
             nasledovnici.remove(nasledovnik)
@@ -190,6 +194,7 @@ def vytriedNasledovnikov(nasledovnici, spracovaneStavy, minHeap):
         minHeap.insert(nasledovnik)
 
 
+# zostavi finalne riesenie postupnym vracanim sa do korena
 def zostavRiesenie(uzol):
     result = []
     while uzol is not None:
@@ -236,6 +241,7 @@ if __name__ == "__main__":
         start = timeit.default_timer()
 
         riesenie = lacne_hladanie(problem, heuristika)
+
         end = timeit.default_timer() - start
 
         print(f"Hladanie trvalo: {end}")
