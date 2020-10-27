@@ -98,7 +98,7 @@ def heuristika1(stav, ciel):
     vysledok = 0
     for i, sublist in enumerate(stav):
         for j, cislo in enumerate(sublist):
-            if cislo != 0 and cislo != ciel[i][j]:
+            if cislo not in (0, ciel[i][j]):
                 vysledok += 1
 
     return vysledok
@@ -162,11 +162,11 @@ def vykonajOperator(stav, operator, i, j):
 def opacnySmer(newOperator, parentOperator):
     if newOperator == "VPRAVO" and parentOperator == "VLAVO":
         return True
-    elif newOperator == "VLAVO" and parentOperator == "VPRAVO":
+    if newOperator == "VLAVO" and parentOperator == "VPRAVO":
         return True
-    elif newOperator == "HORE" and parentOperator == "DOLE":
+    if newOperator == "HORE" and parentOperator == "DOLE":
         return True
-    elif newOperator == "DOLE" and parentOperator == "HORE":
+    if newOperator == "DOLE" and parentOperator == "HORE":
         return True
     return False
 
@@ -207,7 +207,7 @@ def zostavRiesenie(uzol):
 def lacne_hladanie(problem, heuristika):
     riesenie = None
     start, ciel = problem
-    if heuristika.__name__ == "heuristika2":
+    if heuristika is heuristika2:
         ziskajPozicieCisel(ciel)  # ak je to heurestika 2 dokazem si dopredu vypocitat pozicie
     operatory = ["VPRAVO", "DOLE", "VLAVO", "HORE"]
     start = Node(start, None, None, heuristika, ciel)
@@ -234,7 +234,7 @@ def lacne_hladanie(problem, heuristika):
 if __name__ == "__main__":
     while True:
         problem, heuristika = loadInput()
-        if problem == None:
+        if problem is None:
             print("Zly vstup :)")
             continue
 
